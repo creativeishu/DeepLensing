@@ -1,3 +1,6 @@
 *.gnuplot
 *.jpg
 *.fits
+*.npy
+*.eps
+*.pyc

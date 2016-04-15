@@ -4,7 +4,7 @@ from subprocess import call
 from sys import exit
 from random import random
 import os
-np.random.seed(123224)
+np.random.seed(2527)
 
 def fits2data(filename):
 	from astropy.io import fits
@@ -26,7 +26,7 @@ def GenSourceFile(Nsources, sourceX, sourceY, sourceR, filename='sources.gs'):
 		else:
 			call("echo sources/add/circle %i %1.3f %1.3f 1 %1.3f >> %s"%(i, sourceX[i], sourceY[i], sourceR[i], filename), shell=True)
 
-def LensParams(Ngal=5, xmin=-10, xmax=10, ymin=-10, ymax=10, minmass=11.0, maxmass=11.5):
+def LensParams(Ngal=5, xmin=-5, xmax=5, ymin=-5, ymax=5, minmass=11.5, maxmass=11.7):
 	posX = np.random.uniform(xmin/2, xmax/2, Ngal)
 	posY = np.random.uniform(ymin/2, ymax/2, Ngal)
 	mass = 10**np.random.uniform(minmass, maxmass, Ngal)
@@ -35,21 +35,21 @@ def LensParams(Ngal=5, xmin=-10, xmax=10, ymin=-10, ymax=10, minmass=11.0, maxma
 
 def SourceParams(Nsources, Ngal, makelens, posX, posY):
 	if makelens:
-		source_distance = 0.01
+		source_distance = 0.0
 	else:
-		source_distance = 1.0
+		source_distance = 2.0
 
 	ind = np.random.choice(Ngal, Nsources, replace=False)
 	sourcesX = np.zeros((Nsources))
 	sourcesY = np.zeros((Nsources))
 	for i in range(Nsources):
-		sourcesX[i] = np.random.normal(loc=posX[ind[i]], scale=source_distance)
-		sourcesY[i] = np.random.normal(loc=posY[ind[i]], scale=source_distance)
-	sourcesR = np.random.normal(loc=0.5, scale=0.1, size=Nsources)
+		sourcesX[i] = np.random.normal(loc=posX[ind[i]]+source_distance, scale=0.5)
+		sourcesY[i] = np.random.normal(loc=posY[ind[i]]+source_distance, scale=0.5)
+	sourcesR = np.random.normal(loc=0.2, scale=0.05, size=Nsources)
 	return [sourcesX, sourcesY, sourcesR]
 
 def GenMainFile(filename="gen.gs", lensfilename="lens.gs", sourcefilename="sources.gs", zl=0.5, zs=1.0,\
-			xmin=-10, xmax=10, ymin=-10, ymax=10, xpix=32, ypix=32):
+			xmin=-5, xmax=5, ymin=-5, ymax=5, xpix=32, ypix=32):
 
 	call("echo lens/new/mplummers z\(%1.2f\) %s > %s"%(zl, lensfilename, filename), shell=True)
 	call("echo lensplane/new/local %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f >> %s"%(xmin, ymin, xmax, ymax, xpix, ypix, filename), shell=True)
@@ -77,7 +77,7 @@ def GenAllFiles(Ngal, Nsources, makelens):
 def GetImages(Ngal, Nsources, makelens):
 	GenAllFiles(Ngal, Nsources, makelens)
 	call(["graleshell", "gen.gs"])
-	img = fits2data('imgplane.fits')
+	img = fits2data('imgplane.fits')#/2.0
 	lens = fits2data('lens.fits')
 	return [img, lens]
 
@@ -89,16 +89,54 @@ def GetSamples(Nsamples, Ngal, Nsources, makelens):
 	data = []
 	for i in range(Nsamples):
 		data.append(GetImage(Ngal, Nsources, makelens))
+		# plt.imshow(data[i], cmap='Greys')
+		# plt.colorbar()
+		# plt.show()
 	return np.array(data)
+
+def MakeTrainingSample(NsamplesTrue, NsamplesFalse, Ngal, Nsources):
+	data = []
+	for i in range(NsamplesFalse):
+		data.append(GetImage(Ngal, Nsources, False))
+	for j in range(NsamplesTrue):
+		data.append(GetImage(Ngal, Nsources, True))
+
+	data = np.array(data)
+
+	Y0 = np.zeros((NsamplesFalse))
+	Y1 = np.ones((NsamplesTrue))
+
+	Y = np.concatenate((Y0,Y1))
+
+	arr = np.arange(NsamplesTrue+NsamplesFalse)
+	np.random.shuffle(arr)
+
+	xtrain = data[arr]
+	ytrain = Y[arr]
+	print "Shape of X_train: ", np.shape(xtrain)
+	print "Shape of Y_train: ", np.shape(ytrain)
+	return [xtrain, ytrain]
+
 
 #==========================================================
 
 if __name__=="__main__":
-	data = GetSamples(10, 10, 2, True)
-	print np.shape(data)
 
+	[xtrain, ytrain] = MakeTrainingSample(500,500,10,2)
+	np.save('xtrain.npy', xtrain)
+	np.save('ytrain.npy', ytrain)
 
+	# img = GetImage(10, 2, False)
 
+	# data_true = GetSamples(20, 10, 2, True)
+	# np.save('data_true.npy', data_true)
+
+	# data_false = GetSamples(20, 10, 2, False)
+	# np.save('data_false.npy', data_false)
+
+	# d = GetImage(3, 2, True)
+	# plt.imshow(d, cmap='Greys')
+	# plt.show()
 
 
 
