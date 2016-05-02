@@ -26,10 +26,10 @@ data_augmentation = False
 # input image dimensions
 img_rows, img_cols = 32, 32
 chan_min = 0
-chan_max = 1
+chan_max = 3
 img_channels = chan_max - chan_min
 
-dir_data = "./data/Sim/SimLens/run_000/"
+dir_data = "GenerateData/"
 
 f_xtrain = dir_data + "xtrain.npy"
 f_ytrain = dir_data + "ytrain.npy"
@@ -52,10 +52,10 @@ X_test = X_train_tmp[nb_train_samples:nb_train_samples+nb_test_samples, :, :]
 y_test = y_train_tmp[nb_train_samples:nb_train_samples+nb_test_samples]
 
 # add dimension
-X_train = np.expand_dims(X_train, axis=1)
-X_test = np.expand_dims(X_test, axis=1)
-y_train = np.expand_dims(y_train, axis=1)
-y_test = np.expand_dims(y_test, axis=1)
+# X_train = np.expand_dims(X_train, axis=1)
+# X_test = np.expand_dims(X_test, axis=1)
+# y_train = np.expand_dims(y_train, axis=1)
+# y_test = np.expand_dims(y_test, axis=1)
 
 # Measure limits
 print(np.min(X_train), np.max(X_train))
@@ -79,10 +79,10 @@ y_train = y_train_tmp[:nb_train_samples, :]
 X_test = X_train_tmp[nb_train_samples:nb_train_samples+nb_test_samples, :, :, :]
 y_test = y_train_tmp[nb_train_samples:nb_train_samples+nb_test_samples, :]
 '''
-
-check_test = np.where(y_train[:, 0] == 0)[0]
+print("dimension", np.shape(y_train))
+check_test = np.where(y_train[:] == 0)[0]
 print(len(check_test))
-check_test = np.where(y_train[:, 0] == 1)[0]
+check_test = np.where(y_train[:] == 1)[0]
 print(len(check_test))
 # for i in np.arange(len(X_train[:, 0, 0, 0])):
 #    print(np.min(X_train[i, 0, :, :]), np.max(X_train[i, 0, :, :]), y_train[i, 0])
